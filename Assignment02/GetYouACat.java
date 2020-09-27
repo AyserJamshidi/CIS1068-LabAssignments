@@ -14,6 +14,7 @@ this was what made the most sense for even more reduced redundancy instead of ma
 The instructor said this code was completely okay and said I'm good to submit (inspected it during lab).
 If this is not okay I can submit another file with the respective 12 animal(); repeatN(); functions.
 */
+
 import java.util.ArrayList;
 
 public class GetYouACat {
@@ -46,7 +47,7 @@ public class GetYouACat {
         animalList.add(actualName + " goes " + animalSound);
 
         // Cycle through every animal in the animal list, starting from the END.
-        for (int i = animalList.size()-1; i >= 0; i--)
+        for (int i = animalList.size() - 1; i >= 0; i--)
             System.out.println(animalList.get(i)); // The 1 println!
 
         // Does not count in our 1 println limitation, this is simply a splitter at the end of a paragraph.
