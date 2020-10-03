@@ -34,6 +34,8 @@ import java.util.Scanner;
 
 public class SouthieStyles {
 
+	public static final String SPLITTER = " {SPLIT} ";
+
 	@SuppressWarnings("all")
 	public static void main(String[] args) throws FileNotFoundException {
 		String mainClassLocation = SouthieStyles.class.getProtectionDomain().getCodeSource().getLocation().getPath();
@@ -61,7 +63,7 @@ public class SouthieStyles {
 
 				for (int wordIndex = 0; wordIndex < (sentenceWordArray.length); wordIndex++) {
 					if (rIsLastLetter(sentenceWordArray[wordIndex])) {
-						editedBookText.append(letterRtoH(sentenceWordArray[wordIndex]));
+						editedBookText.append(convertWord(sentenceWordArray[wordIndex]));
 					} else {
 						editedBookText.append(sentenceWordArray[wordIndex]);
 					}
@@ -77,66 +79,44 @@ public class SouthieStyles {
 			}
 		}
 
-		outputStream.print(editedBookText.toString().replaceAll(" \\{SPLIT} ", "\r\n"));
+		outputStream.print(editedBookText.toString().replace(SPLITTER, "\r\n"));
 		outputStream.close();
 
-		System.out.println(editedBookText.toString().replace(" {SPLIT} ", "\r\n"));
-
-		// Revision 1
-		/*while (bookScan.hasNextLine()) {
-			currentLineText = bookScan.nextLine();
-
-			// Check if the current line has any quotes.  If not, then there's no work to be done.
-			if (StringFunctions.containsQuotes(currentLineText)) { // Only editing text inside of quotes for extra credit.
-				String currentWorkingWithText;
-
-				//currentWorkingWithText = currentLineText.substring();
-			} else {
-				System.out.println(currentLineText);
-			}
-		}*/
-
-		// Revision 2
-		/*
-		String currentLineText;
-		StringBuilder outputText = new StringBuilder();
-		StringBuilder currentQuotedText = new StringBuilder();
-		boolean waitForClosingQuote = false;
-
-		while (bookScan.hasNextLine()) {
-			currentLineText = bookScan.nextLine();
-
-			// Check if currentLineText contains quotes, if false, just print out.
-			if (StringFunctions.containsQuotes(currentLineText)) {
-				for (char currentChar : currentLineText.toCharArray()) {
-					if (StringFunctions.isQuote(currentChar)) { // We're starting/ending a quote!
-						waitForClosingQuote = !waitForClosingQuote;
-						outputText.append(currentChar);
-					} else if (waitForClosingQuote) { // We're inside of a quote!
-						currentQuotedText.append(currentChar);
-					}
-				}
-			} else if (!waitForClosingQuote) {
-				outputText.append(currentLineText);
-			} // Skip so we can get to or edit the next line(s) for a closing quote.
-		} */
+		System.out.println(editedBookText.toString().replace(SPLITTER, "\r\n"));
 	}
 
-	public static String testRConversion(String s) {
-		StringBuilder lowercaseContainer = new StringBuilder(s.toLowerCase()).reverse();
+	/**
+	 * Converts a String that ends in r (not including special characters) into a Southie accent
+	 *
+	 * @param s the word to convert
+	 * @return the String, converted to Southie accent.
+	 */
+	public static String convertWord(String s) {
+		String lowercaseContainer = s.toLowerCase();
+		StringBuilder outputString = new StringBuilder(s);
 
-		if (lowercaseContainer.indexOf("r") == 0) {
-			String[] yahExceptions = { "ee", "i" };
+		String[] prefixExceptions = {"ee", "i", "oo"};
 
-			for (String curException : yahExceptions) {
-				if (lowercaseContainer.toString().startsWith(curException, 0)) {
-					// Fill in later
-				}
+		for (int i = 0; i < prefixExceptions.length; i++) {
+			int exIndex = lowercaseContainer.lastIndexOf(prefixExceptions[i] + "r");
+			int rIndex = lowercaseContainer.lastIndexOf('r');
+
+			if (exIndex != -1 && ((rIndex - exIndex) <= prefixExceptions[i].length())) {
+				/*
+				 * We check to see if i <= 1 as if it isn't, our replacement text will change based
+				 * on the expectation return requirements.
+				 */
+				String replacementText = (i <= 1) ? "yah" : "wah";
+
+				if (Character.isUpperCase(s.charAt(rIndex)))
+					replacementText = replacementText.toUpperCase();
+
+				outputString.replace(rIndex, (rIndex + 1), replacementText);
+				break;
 			}
 		}
 
-
-		return s;
+		return outputString.toString();
 	}
 
 
@@ -172,7 +152,7 @@ public class SouthieStyles {
 	}
 
 	public static boolean rIsLastLetter(String testStr) {
-		return testStr.toLowerCase().endsWith("r");//removeSpecialCharacters(testStr.toLowerCase()).endsWith("r");
+		return removeSpecialCharacters(testStr.toLowerCase()).endsWith("r");
 	}
 
 	public static String letterRtoH(String givenString) {
