@@ -10,4 +10,11 @@ chest and the top of the dresser and carried them away with him.
 
 “If the room was hired for the purpose of getting rid of the boy,” said
 Chick, as the detectives walked away, “why should it have been taken
-yesterday? The boy was not in the game at that time.”
+yesterday? The boy was not in the game at that time.” "Pizza"...
+
+"A", "Deer", "Veneers", "Door", "Very", "Tuna", "Cuba", "Idea", "Car", "Harbor"
+"a", "deer", "veneers", "door", "very", "tuna", "cuba", "idea", "car", "harbor"
+"Aa", "DEER", "VENEERS", "DOOR", "VERY", "TUNA", "CUBA", "IDEA", "CAR", "HARBOR"
+
+
+"DeER", "VENeERS", "DoOR", "VeRY", "TUnA", "CUbA", "IdEA", "cAR", "hARBOR"

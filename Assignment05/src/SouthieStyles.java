@@ -34,174 +34,199 @@ import java.util.Scanner;
 
 public class SouthieStyles {
 
-	public static final String SPLITTER = " {SPLIT} ";
+	public static final String SPLITTER = "{SPLIT}";
 
 	@SuppressWarnings("all")
-	public static void main(String[] args) throws FileNotFoundException {
-		String mainClassLocation = SouthieStyles.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-		File bookFile = new File("Assignment05\\src\\The_Great_Diamond_Syndicate_Test.txt");
-		PrintStream outputStream = new PrintStream("Assignment05\\src\\Testyyyy.txt");
-		Scanner bookScan = new Scanner(bookFile);
+	public static void main(String[] args) {
+		File bookFile = new File("Assignment05\\src\\The_Great_Diamond_Syndicate.txt");
+		StringBuilder southieAccentedBook = new StringBuilder();
 
-		StringBuilder testContainer = new StringBuilder();
-		StringBuilder editedBookText = new StringBuilder();
+		try {
+			Scanner bookScan = new Scanner(bookFile);
+			StringBuilder bookContainer = new StringBuilder();
 
-		while (bookScan.hasNextLine()) {
-			testContainer.append(bookScan.nextLine() + " {SPLIT} ");
-		}
+			/*
+			 * Instead of converting words in-line immediately, we store the entire text into a variable to use
+			 * replace and split functions later on.  We use StringBuilder and then convert to a String later as
+			 * many String concatinations will have a performance impact as opposed to just appending this way.
+			 */
+			while (bookScan.hasNextLine()) {
+				bookContainer.append(bookScan.nextLine() + "{SPLIT}");
+			}
 
-		// Every ODD # element is a quote.
-		String[] quotesArray = testContainer.toString().replaceAll("“", "\"").replaceAll("”", "\"").split("\"");
+			/*
+			 * The plaintext book chosen contains open and closing quotes apart from the standard quote character.  To
+			 * avoid having to take into account many different kinds of quotes, all open/closing quotes are replaced
+			 * with the standard quote character then used as a delimiter to receive an array containing the following
+			 * structure: { "unquoted text", "quoted text", "unquoted text", "quoted text", ... }, assuming the first
+			 * character in the plain text file isn't a quote.
+			 */
+			String[] quotesArray = bookContainer.toString().replaceAll("“", "\"").replaceAll("”", "\"").split("\"");
 
-		for (int quoteIndex = 0; quoteIndex < quotesArray.length; quoteIndex++) {
-			String[] sentenceWordArray;
+			for (int quoteIndex = 0; quoteIndex < quotesArray.length; quoteIndex++) {
+				if ((quoteIndex % 2) != 0) { // Odd index, it's a quote
+					String[] sentenceWordArray = quotesArray[quoteIndex].split(" ");
 
-			if ((quoteIndex % 2) != 0) { // Odd index, it's a quote
-				sentenceWordArray = quotesArray[quoteIndex].split(" ");
+					southieAccentedBook.append("\""); // Beginning quote
 
-				editedBookText.append("\""); // Beginning quote
+					/*
+					 *
+					 * Order:
+					 * 1) very -> wicked
+					 * 2) r exceptions (oor, eer, ir)
+					 * 3) r -> h
+					 * 4) a -> ar
+					 *
+					 * The reason we use a standard for loop is to keep track of the current index so we can check
+					 * if we're at the last word in the sentence's word array. Doing so allows us to properly place
+					 * spaces after each word apart from the very last one.
+					 */
+					for (String currentWord : sentenceWordArray) {
+						// We check the length to avoid changing single letters like I, a, etc.
+						if (currentWord.length() > 1) {
+							String lastLetter = getLastLetter(currentWord.toLowerCase());
 
-				for (int wordIndex = 0; wordIndex < (sentenceWordArray.length); wordIndex++) {
-					if (rIsLastLetter(sentenceWordArray[wordIndex])) {
-						editedBookText.append(convertWord(sentenceWordArray[wordIndex]));
-					} else {
-						editedBookText.append(sentenceWordArray[wordIndex]);
+							switch (lastLetter) {
+								case "y": {
+									if (removeSpecialWordCompareEquals(currentWord, "very"))
+										southieAccentedBook.append(wordConversion("very", currentWord));
+									else
+										southieAccentedBook.append(letterRtoH(currentWord));
+									break;
+								}
+								case "r": {
+									southieAccentedBook.append(letterRtoH(wordConversion(lastLetter, currentWord)));
+									break;
+								}
+								case "a": {
+									southieAccentedBook.append(wordConversion(lastLetter, currentWord));
+									break;
+								}
+								default: { // No exceptions found, just do standard r -> h replacement
+									southieAccentedBook.append(letterRtoH(currentWord));
+									break;
+								}
+							}
+						} else { // We don't change words that are one letter.
+							southieAccentedBook.append(currentWord);
+						}
+
+						// Apply a space before every word except the last one.
+						if (!currentWord.equals(sentenceWordArray[sentenceWordArray.length - 1]))
+							southieAccentedBook.append(" "); // Space after word.
 					}
 
-					if (wordIndex != (sentenceWordArray.length - 1))
-						editedBookText.append(" "); // Space after word.
+					southieAccentedBook.append("\""); // Ending quote
+
+				} else { // Even index, it's normal text we can skip.
+					southieAccentedBook.append(quotesArray[quoteIndex]);
 				}
-
-				editedBookText.append("\""); // Ending quote
-
-			} else { // Even index, it's normal text we can skip.
-				editedBookText.append(quotesArray[quoteIndex]);
 			}
+		} catch (FileNotFoundException e) {
+			System.out.println("The file could not be found.");
+			System.exit(-1);
 		}
 
-		outputStream.print(editedBookText.toString().replace(SPLITTER, "\r\n"));
-		outputStream.close();
+		try {
+			PrintStream outputStream = new PrintStream("Assignment05\\src\\Testyyyy.txt");
 
-		System.out.println(editedBookText.toString().replace(SPLITTER, "\r\n"));
+			outputStream.print(southieAccentedBook.toString().replace(SPLITTER, "\r\n"));
+			outputStream.close();
+		} catch (FileNotFoundException e) {
+			System.out.println("An error occured while trying to create the Southie accented file output.");
+			System.exit(-1);
+		}
+
+		System.out.println(southieAccentedBook.toString().replace(SPLITTER, "\r\n"));
 	}
 
 	/**
-	 * Converts a String that ends in r (not including special characters) into a Southie accent
+	 * Converts a String that ends in {@code inputToReplace} (not including special characters) into a Southie accent
 	 *
-	 * @param s the word to convert
-	 * @return the String, converted to Southie accent.
+	 * @param inputToReplace the String to search for and eventually replace.
+	 * @param s              the String to convert to a Southie accent.
+	 * @return the String, converted to a Southie accent.
 	 */
-	public static String convertWord(String s) {
+	public static String wordConversion(String inputToReplace, String s) {
 		String lowercaseContainer = s.toLowerCase();
+		String replacementText = "";
 		StringBuilder outputString = new StringBuilder(s);
 
-		String[] prefixExceptions = {"ee", "i", "oo"};
+		/*
+		 * There's no need to check if this index != -1 as this function assumes this was checked before
+		 * calling it.
+		 */
+		int lastLetterIndex = lowercaseContainer.lastIndexOf(inputToReplace);
 
-		for (int i = 0; i < prefixExceptions.length; i++) {
-			int exIndex = lowercaseContainer.lastIndexOf(prefixExceptions[i] + "r");
-			int rIndex = lowercaseContainer.lastIndexOf('r');
+		switch (inputToReplace) {
+			case "r" -> {
+				if (lastLetterIndex == (s.length() - 1)) { // Check if we're searching for the last letter
+					String[] prefixExceptions = {"ee", "i", "oo"};
+					for (int i = 0; i < prefixExceptions.length; i++) {
+						int exIndex = lowercaseContainer.lastIndexOf(prefixExceptions[i] + inputToReplace);
 
-			if (exIndex != -1 && ((rIndex - exIndex) <= prefixExceptions[i].length())) {
-				/*
-				 * We check to see if i <= 1 as if it isn't, our replacement text will change based
-				 * on the expectation return requirements.
-				 */
-				String replacementText = (i <= 1) ? "yah" : "wah";
-
-				if (Character.isUpperCase(s.charAt(rIndex)))
-					replacementText = replacementText.toUpperCase();
-
-				outputString.replace(rIndex, (rIndex + 1), replacementText);
-				break;
+						if (exIndex != -1 && ((lastLetterIndex - exIndex) <= prefixExceptions[i].length())) {
+							/*
+							 * We check to see if the prefix is still "ee" or "i" for exception #1, otherwise
+							 * we're now in exception #2
+							 */
+							replacementText = (i <= 1) ? "yah" : "wah";
+							break;
+						}
+					}
+				}
+			}
+			case "a" -> replacementText = "ar";
+			case "very" -> {
+				replacementText = "wicked";
 			}
 		}
 
+		// Fix casing for replacement
+		if (Character.isUpperCase(s.charAt(lastLetterIndex))) { // first letter of found index is uppercase
+			if (inputToReplace.length() == 1 || Character.isUpperCase(s.charAt(s.length() - 1))) { // Is one letter OR first letter AND last letter are uppercase
+				replacementText = replacementText.toUpperCase();
+			} else { // It's a word with only first letter being uppercase.
+				replacementText = (Character.toString(replacementText.charAt(0)).toUpperCase() + replacementText.substring(1));
+			}
+		}
+
+		// Finally replace
+		//if (replacementText.length() > 0)
+			outputString.replace(lastLetterIndex, (lastLetterIndex + s.length()), replacementText);
+
+		// Return
 		return outputString.toString();
 	}
 
-
-	/*
-	 *
-	 */
-	public static int indexOfQuotes(String givenString, boolean firstIndex) {
-		char[] quoteArray = {'"', '“', '”'}; // Normal quote, opening quote, closing quote.
-		int quoteDifferenceCounter = 0;
-
-		/*for (char currentQuote : quoteArray)
-			if (givenString.indexOf(currentQuote) != -1)
-				quoteDifferenceCounter++;
-
-		if (quoteDifferenceCounter > 1) {
-			System.out.println("We've encountered more than 1 different quote!!  How do we handle this?!");
-			System.exit(-1);
-		}*/
-
-		for (char currentQuote : quoteArray) {
-			int foundIndex = (firstIndex) ? givenString.indexOf(currentQuote) : givenString.lastIndexOf(currentQuote);
-
-			if (foundIndex != -1)
-				return foundIndex;
-		}
-
-		// We found no quotes
-		return -1;
+	public static String getLastLetter(String s) {
+		String cleanedString = removeSpecialCharacters(s);
+//		int cleanedStrLength = cleanedString.length();
+		return Character.toString(cleanedString.charAt(cleanedString.length() - 1));//(cleanedStrLength >= 1) ? Character.toString(cleanedString.charAt(cleanedStrLength - 1)) : s;
 	}
 
 	public static String removeSpecialCharacters(String givenString) {
 		return givenString.replaceAll("[/:;*\")(<>|?!.,]", "");
 	}
 
-	public static boolean rIsLastLetter(String testStr) {
-		return removeSpecialCharacters(testStr.toLowerCase()).endsWith("r");
+	public static boolean removeSpecialWordCompareEquals(String s1, String s2) {
+		return removeSpecialCharacters(s1.toLowerCase()).equals(removeSpecialCharacters(s2.toLowerCase()));
 	}
 
-	public static String letterRtoH(String givenString) {
-		String vowels = "aeiouAEIOU";
+	public static String letterRtoH(String s) {
+		String[] vowelPrefix = {"ar", "er", "ir", "or", "ur"};
+		StringBuilder outputString = new StringBuilder(s);
 
-		for (int i = 0; i < vowels.length(); i++) {
-			char currentVowel = vowels.charAt(i);
-			String currentVowelAndR = currentVowel + "r";
+		for (String currentPrefix : vowelPrefix) {
+			int prefixIndex = s.toLowerCase().indexOf(currentPrefix);
 
-			if (givenString.contains(currentVowelAndR)) { // ar, er, ir, or, ur
-				givenString = givenString.replaceAll(currentVowelAndR, currentVowel + "h");
+			// Check if the prefix exists
+			if (prefixIndex != -1) {
+				String replacementLetter = Character.isUpperCase(s.charAt(prefixIndex + 1)) ? "H" : "h";
+				outputString.replace(prefixIndex + 1, prefixIndex + 2, replacementLetter);
 			}
 		}
 
-		return givenString;
+		return outputString.toString();
 	}
-
-	public static boolean endWithLetterA(String givenString) {
-		StringBuilder reversedString = new StringBuilder(removeSpecialCharacters(givenString.toLowerCase())).reverse();
-		return reversedString.indexOf("a") == 0;
-	}
-
-	public static String endingAtoH(String givenString) {
-
-		return givenString;
-	}
-
-	/*public static String rVowelConversionByReversal(String givenString) {
-		String chaBeforeR = "aeiouAEIOU";
-		StringBuilder reversedString = new StringBuilder(givenString).reverse();
-		StringBuilder loweredReversedString = new StringBuilder(givenString.toLowerCase()).reverse();
-
-		String replacementLetters = "";
-
-		if (loweredReversedString.indexOf("ree") != -1) {
-
-		} else if (loweredReversedString.indexOf("ri") != -1) {
-
-		} else {
-			System.out.println("Hi!");
-			int lowerRindex = loweredReversedString.indexOf("r") + 1;
-			int higherRindex = loweredReversedString.indexOf("R");
-
-			replacementLetters = (reversedString.indexOf("R") != -1) ? "H" : "h";
-
-			reversedString.replace(lowerRindex - 1, lowerRindex, replacementLetters);
-
-		}
-
-		return reversedString.reverse().toString();
-	}*/
 }
