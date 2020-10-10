@@ -17,4 +17,4 @@ yesterday? The boy was not in the game at that time.” "Pizza"...
 "Aa", "DEER", "VENEERS", "DOOR", "VERY", "TUNA", "CUBA", "IDEA", "CAR", "HARBOR"
 
 
-"DeER", "VENeERS", "DoOR", "VeRY", "TUnA", "CUbA", "IdEA", "cAR", "hARBOR"
+"Careara"
