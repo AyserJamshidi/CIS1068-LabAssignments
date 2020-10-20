@@ -145,7 +145,7 @@ public class SouthieStyles {
 			outputStream.print(southieAccentedBook.toString());
 			outputStream.close();
 		} catch (FileNotFoundException e) {
-			System.out.println("An error occured while reading " + fileName + " or creating the output.\n" + e);
+			System.out.println("An error occurred while reading " + fileName + " or creating the output.\n" + e);
 			System.exit(-1);
 		}
 
