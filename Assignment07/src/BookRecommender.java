@@ -15,7 +15,7 @@
  * x 18 points Load the 20 book names and the book ratings from 30 people into two arrays in memory.
  *   These can be read by your program using the Scanner class. You are not required to handle FileNotFoundException.
  * x 10 points Ask the user to enter a rating (between 1 and 5, or -1 if they haven't read it) for each book.
- * - 18 points Create a method that determines for each of the 30 people a score, which represents how similar
+ * x 18 points Create a method that determines for each of the 30 people a score, which represents how similar
  *   that person's tastes are to the taste of the user of the program. Store these similarity scores in an array of
  *   30 doubles. The similarity scores should be between 0 and 1 each.
  * - 18 points Create an array that represents recommended ratings for the user. There should be 20 numbers in this
@@ -37,145 +37,140 @@ import java.util.Scanner;
 @SuppressWarnings("all")
 public class BookRecommender {
 
-	private final static String BOOKS_LIST_PATH = "Assignment07/src/BookList.txt";
-	private final static String RATINGS_LIST_PATH = "Assignment07/src/BookRatings.txt";
+    private final static String BOOKS_LIST_PATH = "Assignment07/src/BookList.txt";
+    private final static String RATINGS_LIST_PATH = "Assignment07/src/BookRatings.txt";
 
-	public static void main(String[] args) {
-		List<String> bookListContainer = fileToList(BOOKS_LIST_PATH);
-		List<String> ratingListContainer = fileToList(RATINGS_LIST_PATH);
+    public static void main(String[] args) {
+        List<String> bookListContainer = fileToList(BOOKS_LIST_PATH);
+        List<String> ratingListContainer = fileToList(RATINGS_LIST_PATH);
 
-		int[][] userRatings = new int[ratingListContainer.size()][ratingListContainer.get(0).split(" ").length];
+        // [user][user's ratings]
+        int[][] databaseRatings = new int[ratingListContainer.size()][ratingListContainer.get(0).split(" ").length];
 
-		System.out.println(Arrays.toString(userRatings[0]));
+        for (int i = 0; i < ratingListContainer.size(); i++) {
+            String[] StringToIntArray = ratingListContainer.get(i).split(" ");
 
-		/*System.out.println("bookListContainer: " + countFileLines(BOOKS_LIST_PATH));
+            for (int j = 0; j < StringToIntArray.length; j++)
+                databaseRatings[i][j] = Integer.parseInt(StringToIntArray[j]);
+        }
 
-		// array[bookRow][currentUserRatingColumn]
-		int[][] ratingList = assignRatingsToBooks(bookListContainer, ratingListContainer);//new int[bookListContainer.size()][ratingListContainer.size()];
+        // array[bookRow][currentUserRatingColumn]
+		//int[][] ratingList = assignRatingsToBooks(bookListContainer, ratingListContainer);//new int[bookListContainer.size()][ratingListContainer.size()];
 
-		for (int i = 0; i < ratingListContainer.size(); i++)
-			System.out.print(ratingListContainer.get(i) + " \n"); System.out.println();
+        //int[] humanUserRatings = userInput(bookListContainer);
+        int[] humanUserRatings = {1, 1, 2, 3, 5, 3, 1, -1, -1, -1, 4, 4, 5, 1, 2, 3, 1, 2, -1, -1};
 
-		//int[] humanUserRatings = userInput(bookListContainer);
-		int[] humanUserRatings = {1, 1, 2, 3, 5, 3, 1, -1, -1, -1, 4, 4, 5, 1, 2, 3, 1, 2, -1, -1};
+        double[] ascendingSimilarityRatings = new double[databaseRatings.length];
 
+        for (int i = 0; i < ascendingSimilarityRatings.length; i++)
+            ascendingSimilarityRatings[i] = cosineSimilarity(humanUserRatings, databaseRatings[i]);
 
-		System.out.println(cosineSimilarity(humanUserRatings, ratingList[0]));*/
-	}
+        Arrays.sort(ascendingSimilarityRatings);
+        System.out.println(Arrays.toString(ascendingSimilarityRatings));
+    }
 
-	/**
-	 * @param humanUserRatings
-	 * @param fileRatings
-	 * @return A double at the intervals [0, 1] or -1 if the arrays aren't equal
-	 */
-	public static double cosineSimilarity(int[] humanUserRatings, int[] fileRatings) {
-		if (humanUserRatings == null || fileRatings == null || humanUserRatings.length != fileRatings.length) {
-			System.out.println("Something happened! " + (humanUserRatings == null));
-			System.out.println("Something happened! " + (fileRatings == null));
-			System.out.println("Something happened! " + (humanUserRatings.length != fileRatings.length));
-			System.out.println("Something happened! " + humanUserRatings.length);
-			System.out.println("Something happened! " + fileRatings.length);
-			return -1;
-		}
+    public static int[] stringToIntArray(String stringList) {
+        String[] stringArr = stringList.split(" ");
+        int[] intArr = new int[stringArr.length];
 
-		double p1 = 0, p2 = 0;
-		List<Integer> similarBooksIndexes = new ArrayList<>();
+        for (int i = 0; i < intArr.length; i++)
+            intArr[i] = Integer.parseInt(stringArr[i]);
 
-		for (int i = 0; i < humanUserRatings.length; i++) {
-			if (humanUserRatings[i] != -1)
-				p1 += Math.pow(humanUserRatings[i], 2);
+        return intArr;
+    }
 
-			if (fileRatings[i] != -1)
-				p2 += Math.pow(fileRatings[i], 2);
+    /**
+     * Gets a cos similarity value comparing each read book between {@code humanUserRatings} and {@code databaseRatings}
+     * Both arrays must have the same array length or it is impossible to get a cos similarity between them.
+     *
+     * @param humanUserRatings current human user's array of ratings
+     * @param databaseRatings current database index's array of ratings.
+     * @return A double at the intervals [0, 1] or -1 if the array lengths aren't equal
+     */
+    public static double cosineSimilarity(int[] humanUserRatings, int[] databaseRatings) {
+        // Ensure if both arrays exist and comparable
+        if (humanUserRatings == null || databaseRatings == null || humanUserRatings.length != databaseRatings.length)
+            return -1;
 
-			// The human and the current user read this book
-			if (humanUserRatings[i] != -1 && fileRatings[i] != -1)
-				similarBooksIndexes.add(i);
-		}
+        // Variable init for human and database
+        double humanSum = 0, databaseSum = 0;
+        List<Integer> similarBooksIndexes = new ArrayList<>();
 
-		p1 = Math.sqrt(p1);
-		p2 = Math.sqrt(p2);
+        for (int i = 0; i < humanUserRatings.length; i++) { // Loop through every rating
+            if (humanUserRatings[i] != -1) // Square current rating for human's ratings
+                humanSum += Math.pow(humanUserRatings[i], 2);
 
-		double both = 0;
+            if (databaseRatings[i] != -1) // Square current rating for current database user's ratings
+                databaseSum += Math.pow(databaseRatings[i], 2);
 
-		for (int bookIndex : similarBooksIndexes)
-			both += (humanUserRatings[bookIndex] * fileRatings[bookIndex]);
+            if (humanUserRatings[i] != -1 && databaseRatings[i] != -1) // The human and the current user read this book
+                similarBooksIndexes.add(i);
+        }
 
-		return both / (p1 * p2);
-	}
+        humanSum = Math.sqrt(humanSum); // Square both to get original value as abs
+        databaseSum = Math.sqrt(databaseSum);
 
-	public static int[] stringToArray(List<String> givenList) {
+        double both = 0;
 
-		for (String curStrIntList : givenList) {
-			for (String curStringInteger : curStrIntList.split(" ")) {
+        for (int bookIndex : similarBooksIndexes)
+            both += (humanUserRatings[bookIndex] * databaseRatings[bookIndex]);
 
-			}
-		}
-		/*int[] booksAndRatings = new int[books.size()][ratings.size()];
+        return both / (humanSum * databaseSum);
+    }
 
-		for (int book = 0, user = 0; user < ratings.size(); user++, book = 0) // Loop the amount of lines of RATINGS_LIST_PATH file
-			for (String curStrInteger : ratings.get(user).split(" ")) { // Array of Integers as Strings
-				booksAndRatings[book][user] = Integer.parseInt(curStrInteger);
-				book++;
-			}
+    public static int[][] assignRatingsToBooks(List<String> books, List<String> ratings) {
+        int[][] booksAndRatings = new int[books.size()][ratings.size()];
 
-		return booksAndRatings;*/
-		return null;
-	}
+        for (int book = 0, user = 0; user < ratings.size(); user++, book = 0) // Loop the amount of lines of RATINGS_LIST_PATH file
+            for (String curStrInteger : ratings.get(user).split(" ")) { // Array of Integers as Strings
+                booksAndRatings[book][user] = Integer.parseInt(curStrInteger);
+                book++;
+            }
 
-	public static int[][] assignRatingsToBooks(List<String> books, List<String> ratings) {
-		int[][] booksAndRatings = new int[books.size()][ratings.size()];
+        return booksAndRatings;
+    }
 
-		for (int book = 0, user = 0; user < ratings.size(); user++, book = 0) // Loop the amount of lines of RATINGS_LIST_PATH file
-			for (String curStrInteger : ratings.get(user).split(" ")) { // Array of Integers as Strings
-				booksAndRatings[book][user] = Integer.parseInt(curStrInteger);
-				book++;
-			}
+    public static int[] userInput(List<String> bookList) {
+        int[] currentUserRatings = new int[bookList.size()];
+        Scanner in = new Scanner(System.in);
 
-		return booksAndRatings;
-	}
+        for (int i = 0; i < bookList.size(); i++) {
+            boolean hasInputIncorrectly = false;
 
-	public static int[] userInput(List<String> bookList) {
-		int[] currentUserRatings = new int[bookList.size()];
-		Scanner in = new Scanner(System.in);
+            while ((currentUserRatings[i] != -1 && currentUserRatings[i] < 1) || 5 < currentUserRatings[i]) {
+                if (hasInputIncorrectly)
+                    System.out.println(currentUserRatings[i] + " is not a proper rating.");
 
-		for (int i = 0; i < bookList.size(); i++) {
-			boolean hasInputIncorrectly = false;
+                System.out.print("Input a rating from 1-5, or -1 if you haven't read \"" + bookList.get(i) + "\": ");
 
-			while ((currentUserRatings[i] != -1 && currentUserRatings[i] < 1) || 5 < currentUserRatings[i]) {
-				if (hasInputIncorrectly)
-					System.out.println(currentUserRatings[i] + " is not a proper rating.");
+                currentUserRatings[i] = in.nextInt();
+                hasInputIncorrectly = true;
+                System.out.println();
+            }
+        }
 
-				System.out.print("Input a rating from 1-5, or -1 if you haven't read \"" + bookList.get(i) + "\": ");
+        return currentUserRatings;
+    }
 
-				currentUserRatings[i] = in.nextInt();
-				hasInputIncorrectly = true;
-				System.out.println();
-			}
-		}
+    public static int countFileLines(String filePath) {
+        return fileToList(filePath).size();
+    }
 
-		return currentUserRatings;
-	}
+    public static List<String> fileToList(String filePath) {
+        List<String> returnedList = new ArrayList<>();
 
-	public static int countFileLines(String filePath) {
-		return fileToList(filePath).size();
-	}
+        try {
+            BufferedReader in = new BufferedReader(new FileReader(filePath));
 
-	public static List<String> fileToList(String filePath) {
-		List<String> returnedList = new ArrayList<>();
+            for (String curLine = in.readLine(); curLine != null; curLine = in.readLine())
+                returnedList.add(curLine);
 
-		try {
-			BufferedReader in = new BufferedReader(new FileReader(filePath));
+        } catch (Exception e) {
+            System.out.println("The file " + filePath + " couldn't be read!");
+        }
 
-			for (String curLine = in.readLine(); curLine != null; curLine = in.readLine())
-				returnedList.add(curLine);
-
-		} catch (Exception e) {
-			System.out.println("The file " + filePath + " couldn't be read!");
-		}
-
-		return returnedList;
-	}
+        return returnedList;
+    }
 
 	/*public static double weightedAverage(double[] A, int[][] booksAndRatings, int userNum) {
 		double sumScoreWeightProduct = 0, sumWeights = 0;
