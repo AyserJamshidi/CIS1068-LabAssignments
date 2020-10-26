@@ -60,13 +60,17 @@ public class BookRecommender {
         //int[] humanUserRatings = userInput(bookListContainer);
         int[] humanUserRatings = {1, 1, 2, 3, 5, 3, 1, -1, -1, -1, 4, 4, 5, 1, 2, 3, 1, 2, -1, -1};
 
-        double[] ascendingSimilarityRatings = new double[databaseRatings.length];
+        double[] similarityRatingsArr = new double[databaseRatings.length];
+        int mostSimilarDbUserId = -1;
 
-        for (int i = 0; i < ascendingSimilarityRatings.length; i++)
-            ascendingSimilarityRatings[i] = cosineSimilarity(humanUserRatings, databaseRatings[i]);
+        for (int i = 0; i < similarityRatingsArr.length; i++) {
+	        similarityRatingsArr[i] = cosineSimilarity(humanUserRatings, databaseRatings[i]);
 
-        Arrays.sort(ascendingSimilarityRatings);
-        System.out.println(Arrays.toString(ascendingSimilarityRatings));
+	        if (similarityRatingsArr[i] > mostSimilarDbUserId)
+	        	mostSimilarDbUserId = i;
+        }
+
+        System.out.println(Arrays.toString(similarityRatingsArr));
     }
 
     public static int[] stringToIntArray(String stringList) {
