@@ -29,85 +29,83 @@
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.lang.reflect.Array;
 import java.util.*;
 
 @SuppressWarnings("all")
 public class BookRecommender {
 
-	private final int NUM_RECOMMENDATIONS = 3;
-
-	private final static String BOOKS_LIST_PATH = "Assignment07/src/BookList.txt";
-	private final static String RATINGS_LIST_PATH = "Assignment07/src/BookRatings.txt";
+	private final static String BOOKS_LIST_PATH = "Assignment07/src/BookList.txt"; // Book file directory
+	private final static String RATINGS_LIST_PATH = "Assignment07/src/BookRatings.txt"; // Ratings file directory
 
 	public static void main(String[] args) {
-		List<String> bookListContainer = fileToList(BOOKS_LIST_PATH);
-		List<String> ratingListContainer = fileToList(RATINGS_LIST_PATH);
+		List<String> bookListContainer = fileToList(BOOKS_LIST_PATH); // Put all the book names into a String list
+		List<String> ratingListContainer = fileToList(RATINGS_LIST_PATH); // Put all ratings into a String list
 
-		// [user][book index's rating]
+		// Put all the ratings in the format of: [user index (30)][user's ratings array (20)]
 		int[][] databaseRatings = new int[ratingListContainer.size()][ratingListContainer.get(0).split(" ").length];
+		assignDatabaseRatings(databaseRatings, ratingListContainer);
 
-		for (int i = 0; i < ratingListContainer.size(); i++) {
-			String[] StringToIntArray = ratingListContainer.get(i).split(" ");
-
-			for (int j = 0; j < StringToIntArray.length; j++)
-				databaseRatings[i][j] = Integer.parseInt(StringToIntArray[j]);
-		}
-
+		// Get current user's ratings for each book
 		//int[] humanUserRatings = userInput(bookListContainer);
-		int[] humanUserRatings = {-1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, -1}; // Our input, it's a copy of the last user (30) but subtracting 1 star from the final book
+		int[] humanUserRatings = {1, 1, 1, 2, 2, 4, 3, 2, 2, -1, 1, 1, 1, 3, 4, 5, 2, 1, 2, 3};
 
-		double[] cosSimilarityRatings = new double[databaseRatings.length]; // 30 user similarity ratings when taking into account every book
+		// Get cosine similarities for all users compared to current user
+		double[] cosSimilarityRatings = new double[databaseRatings.length]; // 30 user similarity ratings
+		assignSimilarityRatings(cosSimilarityRatings, humanUserRatings, databaseRatings);
 
-		double highestSimilarityRating = -1;
-		int mostSimilarDbUserId = -1;
+		// Get weighted averages of each book taking into consideration each user's cosine similarities
+		double[] bookRatingsWeighted = weightedAverage(cosSimilarityRatings, databaseRatings);
 
-		for (int i = 0; i < cosSimilarityRatings.length; i++) {
-			cosSimilarityRatings[i] = cosineSimilarity(humanUserRatings, databaseRatings[i]);
+		// Output!
+		int returnedBookIndex = getBestBookIndex(bookRatingsWeighted, humanUserRatings);
 
-			if (cosSimilarityRatings[i] > highestSimilarityRating) {
-				highestSimilarityRating = cosSimilarityRatings[i];
-				mostSimilarDbUserId = i;
-			}
-		}
+		if (returnedBookIndex == -1)
+			System.out.println("You've read every book!  There's nothing for you to read...");
+		else
+			System.out.println("You should read \"" + bookListContainer.get(getBestBookIndex(bookRatingsWeighted, humanUserRatings)) + "\"!");
+	}
 
-		double[] bookRatingsWeighted = averageThing(cosSimilarityRatings, databaseRatings);
-
-
-		final int NUM_RECOMMENDATIONS = 3;
-
+	public static int getBestBookIndex(double[] weightedBookRatings, int[] humanUserRatings) {
 		double highestRating = -1;
 		int highestRatedBookIndex = -1;
 
-		TreeMap<Double, Integer> testy = new TreeMap<>();
+		for (int i = 0; i < weightedBookRatings.length; i++) // Loop through every book
+			if (humanUserRatings[i] == -1 && weightedBookRatings[i] > highestRating) // If we haven't read the book and this book is better than the previous
+				if (weightedBookRatings[i] > highestRating) { // A better book was found!
+					highestRating = weightedBookRatings[i];
+					highestRatedBookIndex = i;
+				}
 
-		// 0.99, 13
-		System.out.println();
+		return highestRatedBookIndex;
+	}
 
-		for (int i = 0; i < bookRatingsWeighted.length; i++) {
-			if (humanUserRatings[i] == -1) { // If we haven't read the book
+	public static void assignSimilarityRatings(double[] cosSimilarityRatings, int[] humanUserRatings, int[][] databaseRatings) {
+		for (int i = 0; i < cosSimilarityRatings.length; i++) // Loop through every rating
+			// Set the current element to the proper cosine similarity rating with respect to index
+			cosSimilarityRatings[i] = cosineSimilarity(humanUserRatings, databaseRatings[i]);
+	}
 
-//				if (bookRatingsWeighted[i] > highestRating) {
-//					System.out.println("Inside! 2");ªªª
-//					highestRating = bookRatingsWeighted[i];
-//					highestRatedBookIndex = i;
-//				}
-			}
+	public static void assignDatabaseRatings(int[][] databaseRatings, List<String> ratingListContainer) {
+		// Since all of the ratings are strings, we parse each int individually.
+		for (int i = 0; i < ratingListContainer.size(); i++) { // Cycle through every user
+			String[] StringToIntArray = ratingListContainer.get(i).split(" ");
+
+			for (int j = 0; j < StringToIntArray.length; j++) // Cycle through every rating this user has
+				databaseRatings[i][j] = Integer.parseInt(StringToIntArray[j]); // Put it into the proper array
 		}
-
-		System.out.println("You should read \"" + bookListContainer.get(highestRatedBookIndex) + "\"!");
-
 	}
 
 	public static int[] stringToIntArray(String stringList) {
+		// Check the string to ensure we don't try working on an empty string and explode later on
 		if (stringList.length() <= 0)
 			return null;
 
-		String[] stringArr = stringList.split(" ");
-		int[] intArr = new int[stringArr.length];
+		String[] stringArr = stringList.split(" "); // Put all of the string-integers into a string array
 
-		for (int i = 0; i < intArr.length; i++)
-			intArr[i] = Integer.parseInt(stringArr[i]);
+		int[] intArr = new int[stringArr.length]; // Create an int array to return
+
+		for (int i = 0; i < intArr.length; i++) // Loop through every string
+			intArr[i] = Integer.parseInt(stringArr[i]); // Convert the string-integer into a string
 
 		return intArr;
 	}
@@ -140,11 +138,12 @@ public class BookRecommender {
 				similarBooksIndexes.add(i);
 		}
 
-		humanSum = Math.sqrt(humanSum); // Square both to get original value as abs
+		humanSum = Math.sqrt(humanSum); // Square (human and database)Sum to get original value as abs
 		databaseSum = Math.sqrt(databaseSum);
 
 		double both = 0;
 
+		// Calculate the numerator
 		for (int bookIndex : similarBooksIndexes)
 			both += (humanUserRatings[bookIndex] * databaseRatings[bookIndex]);
 
@@ -185,10 +184,6 @@ public class BookRecommender {
 		return currentUserRatings;
 	}
 
-	public static int countFileLines(String filePath) {
-		return fileToList(filePath).size();
-	}
-
 	public static List<String> fileToList(String filePath) {
 		List<String> returnedList = new ArrayList<>();
 
@@ -210,7 +205,8 @@ public class BookRecommender {
 	 * @param databaseRatings
 	 * @return
 	 */
-	public static double[] averageThing(double[] cosSimilarities, int[][] databaseRatings) {
+	public static double[] weightedAverage(double[] cosSimilarities, int[][] databaseRatings) {
+		// Ensure we're working with good arrays...
 		if (cosSimilarities == null || databaseRatings == null || cosSimilarities.length <= 0 || databaseRatings.length <= 0)
 			return null;
 
@@ -230,50 +226,3 @@ public class BookRecommender {
 		return returningArray;
 	}
 }
-
-
-/*
-1) Calculate 30 similarity scores,
-2) "How similar am I to those people?"
-3) Get 20 average ratings
-4) The book you recommend is the book with the highest average rating that they HAVEN'T read
-
-PARALLEL ARRAYS, for each book you have 30 user ratings
-
-Books:
-0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
-
-A -1 rating means this user hasn't read the book
-
-Ratings:
--1  2  3  5 -1  5  3  3  1  4  2  2  5 -1  1  3  3  5  4  3
--1  1  1  4  1  3  3  1  2  3  4 -1  4  1  2  4  5  4  2  3
- 3 -1  2  3 -1  2  5 -1  3  3  5  2  2  1  2  3  5  3  4  2
--1  1 -1  4  1  3  5  2  1  5  3 -1  5  2  1  3  4  5  3  2
--1 -1  3  2 -1  5  5  2  2  4  4  2  3  2 -1  3  4  4  3  1
- 2  1  1  5  2  2  4  2  3  4  3 -1  5  2  2  5  3  5  2  1
- 3 -1  3  4 -1  2  5 -1 -1  4  3 -1  3 -1  2  5  5  5  4  2
- 4 -1  4  2  3 -1  1  3  4 -1  1  4  4  4 -1  2 -1  1  4  4
- 4  3  3  3 -1  2  2  4  3 -1  2  4  3  4  2 -1 -1  2  2  3
- 3 -1  3 -1  3  4 -1  5  5 -1 -1 -1  1 -1 -1  1  1  2 -1  5
- 3 -1  3  4  3  4 -1  5  5  2  3  3  4  1  1 -1 -1 -1 -1  4
- 4 -1  4  4  1  3 -1  5  4 -1  1  3  4  1 -1  1 -1  1 -1  5
- 5 -1  3  1  4  3 -1  5  4  1  3  2  1 -1  4  2  1 -1  2  4
- 3 -1  5  1  4  4  2  5  5  1  2  3  1  1 -1  1 -1  1 -1  5
- 4  1  5  4  3 -1  1  3  4 -1 -1  3  3 -1  1  1  2 -1  3  5
--1  1  1  3 -1  3  1  3 -1 -1  3 -1  5  2  2  1  4 -1  5 -1
- 3 -1  2  3  1  5  4  3  3 -1  5 -1  5  2 -1  4  4  3  3  3
- 1  1  1  3  2  4  1 -1 -1 -1  5 -1  3 -1 -1  1 -1  2  5  2
--1  2  3  5 -1  4  3  1  1  3  3 -1  4 -1 -1  4  3  2  5  1
--1  1  3  3 -1  3  3  1 -1 -1  3 -1  5 -1 -1  3  1  2  4 -1
- 3 -1  2  4  1  4  3 -1  2  3  4  1  3 -1  2 -1  4  3  5 -1
--1  1  3  5 -1  4  2  1 -1  3  3  2  3  2 -1  3  1 -1  3 -1
- 3  2  2  3 -1  5 -1 -1  2  3  4 -1  4  1 -1 -1 -1 -1  4  2
--1  3 -1 -1  4 -1  2 -1  2  2  2  5 -1  3  4 -1 -1  2 -1  2
- 1  4  3 -1  3  2  1 -1 -1 -1  1  3  1  3  3  1 -1 -1 -1  3
- 4  3  3 -1  4  2 -1  4 -1 -1  2  4 -1  3  4  2 -1 -1 -1  4
--1  5  1 -1  4  1 -1  3  2  2 -1  4  1  3  3  1 -1 -1 -1  3
--1  4  2  1  5 -1 -1  2  1  1 -1  5 -1  5  4  1  2  2 -1  1
- 2  5  2 -1  3 -1 -1  1 -1  2 -1  4  2  4  3 -1  2  1 -1 -1
- 2  5  1  1  4 -1  2  1 -1 -1  2  4 -1  3  4  2 -1 -1 -1  4
- */
