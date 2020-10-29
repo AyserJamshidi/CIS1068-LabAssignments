@@ -6,10 +6,9 @@
  * Assignment: 7. Book Recommender
  *
  * Description:
- * https://cis.temple.edu/~jfiore/2020/fall/1068/assignments/06/
- * -This class file has array manipulation functions that will be tested upon submission.
- * -All test cases are implemented straight into the main function as the submission template
- *  claims "main = +6 points" so I am under the assumption this is where the tests should be.
+ * https://cis.temple.edu/~jfiore/2020/fall/1068/assignments/07/
+ * - This class file will acquire a user's ratings for a set of books listed in a file and recommend a book that the
+ *   user is most likely to enjoy.
  *
  * Requirements:
  * x 18 points Load the 20 book names and the book ratings from 30 people into two arrays in memory.
@@ -18,12 +17,12 @@
  * x 18 points Create a method that determines for each of the 30 people a score, which represents how similar
  *   that person's tastes are to the taste of the user of the program. Store these similarity scores in an array of
  *   30 doubles. The similarity scores should be between 0 and 1 each.
- * - 18 points Create an array that represents recommended ratings for the user. There should be 20 numbers in this
+ * x 18 points Create an array that represents recommended ratings for the user. There should be 20 numbers in this
  *   array, one for each book. The higher the number, the more strongly your program thinks the user will like the book.
  *   The number should be the average over all 30 ratings for the book that are greater than 0 (only include ratings for
  *   users who have actually rated the book). However, it should be a weighted average: people who are more similar to
  *   the current user should have a higher weight than people who are less similar.
- * - 16 points Display the name of the top book (according to the recommended ratings from the previous step) that the
+ * x 16 points Display the name of the top book (according to the recommended ratings from the previous step) that the
  *   user has not yet read.
  */
 
@@ -31,7 +30,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.*;
 
-@SuppressWarnings("all")
 public class BookRecommender {
 
 	private final static String BOOKS_LIST_PATH = "Assignment07/src/BookList.txt"; // Book file directory
@@ -46,8 +44,8 @@ public class BookRecommender {
 		assignDatabaseRatings(databaseRatings, ratingListContainer);
 
 		// Get current user's ratings for each book
-		//int[] humanUserRatings = userInput(bookListContainer);
-		int[] humanUserRatings = {1, 1, 1, 2, 2, 4, 3, 2, 2, -1, 1, 1, 1, 3, 4, 5, 2, 1, 2, 3};
+		int[] humanUserRatings = userInput(bookListContainer);
+		//int[] humanUserRatings = {1, 1, 1, 2, 2, 4, 3, 2, 2, -1, 1, 1, 1, 3, 4, 5, 2, 1, 2, 3};
 
 		// Get cosine similarities for all users compared to current user
 		double[] cosSimilarityRatings = new double[databaseRatings.length]; // 30 user similarity ratings
@@ -166,11 +164,12 @@ public class BookRecommender {
 		int[] currentUserRatings = new int[bookList.size()];
 		Scanner in = new Scanner(System.in);
 
-		for (int i = 0; i < bookList.size(); i++) {
+		for (int i = 0; i < bookList.size(); i++) { // Loop the amount of books we have to get a rating for each
 			boolean hasInputIncorrectly = false;
 
+			// Checks if the user has input a proper rating and asks them to input a correct one if they haven't
 			while ((currentUserRatings[i] != -1 && currentUserRatings[i] < 1) || 5 < currentUserRatings[i]) {
-				if (hasInputIncorrectly)
+				if (hasInputIncorrectly) // We're back in the loop with a previously set rating!  Must be bad!
 					System.out.println(currentUserRatings[i] + " is not a proper rating.");
 
 				System.out.print("Input a rating from 1-5, or -1 if you haven't read \"" + bookList.get(i) + "\": ");
@@ -187,6 +186,7 @@ public class BookRecommender {
 	public static List<String> fileToList(String filePath) {
 		List<String> returnedList = new ArrayList<>();
 
+		// Puts all of the contents of filePath into the list of strings to parse later
 		try {
 			BufferedReader in = new BufferedReader(new FileReader(filePath));
 
@@ -200,11 +200,6 @@ public class BookRecommender {
 		return returnedList;
 	}
 
-	/**
-	 * @param cosSimilarities
-	 * @param databaseRatings
-	 * @return
-	 */
 	public static double[] weightedAverage(double[] cosSimilarities, int[][] databaseRatings) {
 		// Ensure we're working with good arrays...
 		if (cosSimilarities == null || databaseRatings == null || cosSimilarities.length <= 0 || databaseRatings.length <= 0)
@@ -217,7 +212,7 @@ public class BookRecommender {
 			for (int dbUserIndex = 0; dbUserIndex < databaseRatings.length; dbUserIndex++) // Cycle through every db user
 				if (databaseRatings[dbUserIndex][(int) bookIndex] != -1) { // Ensure the current db user has read the book
 					sumOfWeightedScores += (databaseRatings[dbUserIndex][(int) bookIndex] * cosSimilarities[dbUserIndex]); // user's book index rating * user's cos similarity
-					sumOfWeights += cosSimilarities[dbUserIndex]; // add weight to 
+					sumOfWeights += cosSimilarities[dbUserIndex]; // add weight to denominato
 				}
 
 			returningArray[(int) bookIndex] = sumOfWeightedScores / sumOfWeights;
