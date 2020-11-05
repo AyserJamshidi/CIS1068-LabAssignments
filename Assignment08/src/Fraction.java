@@ -3,7 +3,7 @@ public class Fraction {
 
 	private int numerator, denominator;
 
-	public Fraction(int n, int d) {
+	public Fraction(int n, int d) { // Constructor
 		denomErrorCheck(d); // Check if d = 0
 		int gcd = getGCD(n, d); // Get GCD using Euclidian Algorithm
 
@@ -22,14 +22,14 @@ public class Fraction {
 
 	public void setNum(int n) { // Sets numerator to n
 		numerator = n;
-		simplify();
+		simplify(); // Ensures we store it at its simplified form
 	}
 
 	public void setDenum(int d) { // Sets denominator to d
 		denomErrorCheck(d); // Check if d = 0
 
 		denominator = d;
-		simplify(); // Simplify
+		simplify(); // Ensures we store it at its simplified form
 	}
 
 	public void simplify() { // Simplifies when setting a new numerator/denominator
@@ -50,12 +50,12 @@ public class Fraction {
 			throw new ArithmeticException("d can NOT be 0");
 	}
 
-	public boolean equals(Fraction a) {
+	public boolean equals(Fraction a) { // Compares each fraction's contents to determine equality
 		return (numerator == a.numerator && denominator == a.denominator);
 	}
 
+	// Uses Euclidean Algorithm recursively (if needed) to get the GCD between a and b.
 	private int getGCD(int a, int b) {
-		// Uses Euclidean Algorithm recursively (if needed) to get the GCD between a and b.
 		return (b == 0) ? a : getGCD(b, a % b);
 	}
 
